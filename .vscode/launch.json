@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Typescript",
+      "type": "node",
+      "request": "launch",
+      "protocol": "inspector",
+      "args": ["./src/index.ts"],
+      "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    }
+  ]
+}

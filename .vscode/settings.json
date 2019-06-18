@@ -1,0 +1,8 @@
+{
+  "javascript.preferences.quoteStyle": "single",
+  "typescript.preferences.quoteStyle": "single",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true,
+  },
+  "typescript.updateImportsOnFileMove.enabled": "always"
+}

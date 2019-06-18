@@ -1,0 +1,27 @@
+{
+  "name": "upinside",
+  "version": "1.0.0",
+  "description": "Upinside, new way to mirroring dcinside gallery.",
+  "main": "dist/index",
+  "repository": "git@github.com:toriato/upinside.git",
+  "author": "toriato <totoriato@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "got": "^9.6.0",
+    "moment": "^2.24.0",
+    "mongoose": "^5.6.0",
+    "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.11",
+    "@types/got": "^9.6.0",
+    "@types/moment": "^2.13.0",
+    "@types/mongoose": "^5.5.6",
+    "@types/winston": "^2.4.4",
+    "ts-node": "^8.3.0",
+    "tslint": "^5.17.0",
+    "tslint-config-standard": "^8.0.1",
+    "typescript": "^3.5.2"
+  }
+}

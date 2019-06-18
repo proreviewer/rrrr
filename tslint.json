@@ -1,0 +1,12 @@
+{
+  "extends": [
+    "tslint-config-standard"
+  ],
+  "rules": {
+    "curly": false,
+    "no-empty": false,
+    "ordered-imports": true,
+    "one-variable-per-declaration": false,
+    "no-unused-declaration": true
+  }
+}
