@@ -86,7 +86,8 @@ export interface IComment {
   checked_at: number,
   deleted_at: number,
 
-  is_deleted: boolean
+  is_deleted: boolean,
+  has_image: boolean
 }
 
 export interface IPostDocument extends IPost, Document { }

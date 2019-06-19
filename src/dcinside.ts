@@ -273,7 +273,6 @@ export async function viewComments (opts: CommentsOptions) {
     const hasUsername = node.find('.blockCommentId').length > 0
     const nickname = trim(node.find('.nick').contents().first().text())
     const username = trim(node.find(hasUsername ? '.blockCommentId' : '.blockCommentIp').text()).replace(/[\(\)]/g, '')
-    const body = trim(node.find('.txt').html())
 
     const checkedAt = moment().unix()
     let deletedAt = null
@@ -285,6 +284,20 @@ export async function viewComments (opts: CommentsOptions) {
     if (node.find('.gonick').length > 0) usertype = UserType.FIXED
     else if (node.find('.sub-gonick').length > 0) usertype = UserType.MOD
     else if (node.find('.m-gonick').length > 0) usertype = UserType.ADMIN
+
+    // 내용
+    let hasImage = false
+
+    $('.txt *').each((i, el) => {
+      const node = $(el)
+      const src = node.data('original') || node.attr('src')
+
+      el.attribs = {}
+      node.attr('src', src)
+      hasImage = true
+    })
+
+    const body = trim($('.txt').html())
 
     comments.push({
       minor: opts.minor,
@@ -304,7 +317,8 @@ export async function viewComments (opts: CommentsOptions) {
       checked_at: checkedAt,
       deleted_at: deletedAt,
 
-      is_deleted: isDeleted
+      is_deleted: isDeleted,
+      has_image: hasImage
     })
   }
 

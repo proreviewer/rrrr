@@ -59,7 +59,8 @@ export const commentSchema = new Schema<ICommentDocument>({
   checked_at: Number,
   deleted_at: Number,
 
-  is_deleted: Boolean
+  is_deleted: Boolean,
+  has_image: Boolean
 })
 
 postSchema.index({ minor: 1, gallery: 1, post: -1 }, { unique: true })
