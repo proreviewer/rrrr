@@ -273,7 +273,7 @@ export async function viewComments (opts: CommentsOptions) {
     const hasUsername = node.find('.blockCommentId').length > 0
     const nickname = trim(node.find('.nick').contents().first().text())
     const username = trim(node.find(hasUsername ? '.blockCommentId' : '.blockCommentIp').text()).replace(/[\(\)]/g, '')
-    const body = trim(node.find('.txt').text())
+    const body = trim(node.find('.txt').html())
 
     const checkedAt = moment().unix()
     let deletedAt = null
@@ -369,8 +369,8 @@ export async function check (opts: CheckOptions) {
         http_code: e.statusCode
       }
 
-      // 404 라면 삭제된 글로 간주하기
-      if (e.statusCode === 404) {
+      // 오류 코드가 403 이라면 삭제된 글로 간주하기
+      if (e.statusCode === 403) {
         update.deleted_at = currentUnix
         update.is_deleted = true
         logger.warn(`${prefix} Post deleted`)

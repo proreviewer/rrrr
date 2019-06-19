@@ -41,7 +41,7 @@ async function loopUpdate (minor: boolean, gallery: string) {
         .find({
           minor,
           gallery,
-          http_code: 200,
+          is_deleted: false,
           $or: [
             // 1시간 전 글
             { created_at: { $gte: unix } },
@@ -51,7 +51,7 @@ async function loopUpdate (minor: boolean, gallery: string) {
           ]
         })
         .sort({
-          post: -1,
+          created_at: -1,
           view: -1
         })
 
