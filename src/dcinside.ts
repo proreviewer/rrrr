@@ -4,9 +4,13 @@ import * as moment from 'moment'
 import * as querystring from 'querystring'
 import { CheckOptions, CommentsOptions, IComment, IPost, ListOptions, LosseObject, UpdateOrInsertResult, UserType, ViewOptions } from './interface'
 import logger from './logger'
-import { Comment, Post } from './schema'
+import { Comment, Post } from './model'
 import { isMatch, toInt, trim } from './utils'
 
+/**
+ * 게시글 목록을 불러옵니다.
+ * @param opts 옵션
+ */
 export async function list (opts: ListOptions) {
   let path = `/board/${opts.gallery}?`
 
@@ -16,7 +20,7 @@ export async function list (opts: ListOptions) {
   // 크롤링 시작하기
   const res = await get(path, {
     baseUrl: 'https://m.dcinside.com',
-    timeout: 1500,
+    timeout: 750,
     headers: {
       'User-Agent': '(Android)'
     }
@@ -41,10 +45,14 @@ export async function list (opts: ListOptions) {
   return post
 }
 
+/**
+ * 게시글을 불러옵니다.
+ * @param opts 옵션
+ */
 export async function view (opts: ViewOptions) {
   const res = await get(`/board/${opts.gallery}/${opts.post}`, {
     baseUrl: 'https://m.dcinside.com',
-    timeout: 1500,
+    timeout: 750,
     headers: {
       'User-Agent': '(Android)'
     }
@@ -86,9 +94,6 @@ export async function view (opts: ViewOptions) {
 
   // 시간
   const createdAt = moment(node.find('.ginfo2 li').last().text(), 'YYYY.MM.DD HH:mm').unix()
-
-  // 확인자
-  const isMobile = node.find('.sp-app').length > 0
 
   // 내용
   let hasImage = false
@@ -197,7 +202,6 @@ export async function view (opts: ViewOptions) {
     checked_at: moment().unix(),
     deleted_at: null,
 
-    is_mobile: isMobile,
     is_deleted: false,
     is_recommended: false,
     has_image: hasImage,
@@ -208,10 +212,14 @@ export async function view (opts: ViewOptions) {
   return post
 }
 
+/**
+ * 댓글 한 페이지를 불러옵니다.
+ * @param opts 옵션
+ */
 export async function viewComments (opts: CommentsOptions) {
   const res = await post('/ajax/response-comment', {
     baseUrl: 'https://m.dcinside.com',
-    timeout: 1500,
+    timeout: 500,
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'X-Requested-With': 'XMLHttpRequest'
@@ -220,12 +228,20 @@ export async function viewComments (opts: CommentsOptions) {
       id: opts.gallery,
       no: opts.post,
       csort: 'default',
-      cpage: 1
+      cpage: opts.page || 1
     })
   })
 
   if (!res.body)
     throw new Error('서버가 빈 내용을 반환했습니다.')
+
+  // JSON 데이터 반환 시 댓글이 없는 것으로 판단하고 리턴하기
+  try {
+    JSON.parse(res.body)
+    return []
+  } catch (e) {
+    // 무시하고 다음으로 넘어가기
+  }
 
   const $ = cheerio.load(res.body, {
     decodeEntities: false
@@ -239,7 +255,12 @@ export async function viewComments (opts: CommentsOptions) {
     const node = $(commentData[i])
     const parent = node.hasClass('comment-add') ? (latestComment ? latestComment : 0) : null
 
+    const order = toInt(node.attr('ch'))
     const comment = toInt(node.attr('no'))
+
+    // 순서가 잘못 됐다면 페이지 오류로 판단하고 리턴하기
+    if (order < 1)
+      break
 
     // 댓글돌이 같이 번호가 없는 댓글은 무시하기
     if (!comment)
@@ -250,8 +271,6 @@ export async function viewComments (opts: CommentsOptions) {
       latestComment = comment
 
     const hasUsername = node.find('.blockCommentId').length > 0
-    const userMatches = trim(node.find('.nick').text()).match(/([^\s]+)( \((\d{1,3}\.\d{1,3})\))?/)
-
     const nickname = trim(node.find('.nick').contents().first().text())
     const username = trim(node.find(hasUsername ? '.blockCommentId' : '.blockCommentIp').text()).replace(/[\(\)]/g, '')
     const body = trim(node.find('.txt').text())
@@ -292,6 +311,33 @@ export async function viewComments (opts: CommentsOptions) {
   return comments
 }
 
+/**
+ * 댓글 전체를 불러옵니다.
+ * @param opts 옵션
+ */
+export async function fetchComments (opts: CommentsOptions) {
+  let page = opts.page || 1
+  let result = []
+  const comments = []
+
+  while (page++ === 1 || result.length > 0) {
+    result = await viewComments({
+      minor: opts.minor,
+      gallery: opts.gallery,
+      post: opts.post,
+      page
+    })
+
+    comments.push(...result)
+  }
+
+  return comments
+}
+
+/**
+ * 게시글을 검사해 데이터베이스에 추가하거나 업데이트합니다.
+ * @param opts 옵션
+ */
 export async function check (opts: CheckOptions) {
   const prefix = `[${opts.gallery}#${opts.post}]`
   const currentUnix = moment().unix()
@@ -312,7 +358,7 @@ export async function check (opts: CheckOptions) {
 
     const result = await updateOrInsertPost(postData)
 
-    if (result === UpdateOrInsertResult.INSERTED) logger.info(`${prefix} Post inserted`)
+    if (result === UpdateOrInsertResult.INSERTED) logger.info(`${prefix} Post inserted: ${postData.title}`)
     else if (result === UpdateOrInsertResult.CHECKED) logger.verbose(`${prefix} Post checked`)
     else if (result === UpdateOrInsertResult.UPDATED) logger.info(`${prefix} Post updated`)
   } catch (e) {
@@ -344,7 +390,7 @@ export async function check (opts: CheckOptions) {
   try {
     const query = Comment.find(find)
     const commentData = await query.exec()
-    const comments = await viewComments({
+    const comments = await fetchComments({
       minor: opts.minor,
       gallery: opts.gallery,
       post: opts.post
@@ -385,7 +431,11 @@ export async function check (opts: CheckOptions) {
   }
 }
 
-export async function updateOrInsertPost (data: IPost) {
+/**
+ * 게시글 데이터를 토대로 데이터베이스에 추가하거나 업데이트합니다.
+ * @param data 게시글 데이터
+ */
+async function updateOrInsertPost (data: IPost) {
   let result = UpdateOrInsertResult.CHECKED
 
   try {
@@ -445,7 +495,11 @@ export async function updateOrInsertPost (data: IPost) {
   return result
 }
 
-export async function updateOrInsertComment (data: IComment) {
+/**
+ * 댓글 데이터를 토대로 데이터베이스에 추가하거나 업데이트합니다.
+ * @param data 댓글 데이터
+ */
+async function updateOrInsertComment (data: IComment) {
   let result = UpdateOrInsertResult.CHECKED
 
   try {

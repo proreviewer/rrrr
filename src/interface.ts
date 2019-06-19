@@ -26,7 +26,9 @@ export interface ViewOptions {
   post: number
 }
 
-export interface CommentsOptions extends ViewOptions { }
+export interface CommentsOptions extends ViewOptions {
+  page?: number
+}
 
 export interface CheckOptions extends ListOptions, ViewOptions { }
 
@@ -56,7 +58,6 @@ export interface IPost {
   checked_at: number
   deleted_at: number
 
-  is_mobile: boolean
   is_deleted: boolean
   is_recommended: boolean
   has_image: boolean

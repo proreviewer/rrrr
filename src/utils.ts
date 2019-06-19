@@ -18,7 +18,7 @@ export function toInt (i: any) {
   if (typeof i === 'number')
     return i
 
-  return parseInt(i.replace(/[^\d]/g, ''), 10)
+  return parseInt(i.replace(/[^\d-]/g, ''), 10)
 }
 
 export function isMatch (a: string, b: string) {
