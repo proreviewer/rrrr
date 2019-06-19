@@ -316,11 +316,11 @@ export async function viewComments (opts: CommentsOptions) {
  * @param opts 옵션
  */
 export async function fetchComments (opts: CommentsOptions) {
-  let page = opts.page || 1
+  let page = opts.page || 0
   let result = []
   const comments = []
 
-  while (page++ === 1 || result.length > 0) {
+  while (page++ === 0 || result.length > 0) {
     result = await viewComments({
       minor: opts.minor,
       gallery: opts.gallery,
@@ -347,7 +347,7 @@ export async function check (opts: CheckOptions) {
     post: opts.post
   }
 
-  logger.info(`${prefix} Checking...`)
+  logger.verbose(`${prefix} Checking...`)
 
   // 게시글 업데이트
   try {
